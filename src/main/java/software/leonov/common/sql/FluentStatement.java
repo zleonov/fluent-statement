@@ -25,7 +25,7 @@ import java.util.Calendar;
 
 /**
  * A {@code FluentStatement} is a {@link PreparedStatement} that provides <i>bindXXXX</i> methods which return
- * <i>{@code this} instance</i> for users who prefer
+ * <i>{@code this} statement instance</i> for users who prefer
  * <a href="http://en.wikipedia.org/wiki/Fluent_interface" target="_blank">fluency</a> as a style.
  * <p>
  * Instances of this class can be obtained by calling the various {@link Connections#prepare(Connection, String)
@@ -37,7 +37,8 @@ import java.util.Calendar;
  * after each call to {@code addBatch}.</li>
  * <li>The ability to retrieve the current batch size since the last call to {@link #executeBatch()} via the
  * {@link #getBatchSize()} method.</li>
- * <li>The ability to retrieve the the original SQL used to create this {@code FluentStatement} via {@link #sql()}.</li>
+ * <li>The ability to retrieve the the original SQL used to create this {@code FluentStatement} via
+ * {@link #getSQL()}.</li>
  * </ul>
  * <p>
  * <b>Note:</b> While some driver implementations allow users to call the following {@link Statement} methods:
@@ -48,28 +49,28 @@ import java.util.Calendar;
  * <li>{@link #addBatch(String)}</li>
  * <li>{@link #executeUpdate(String, int)}</li>
  * <li>{@link #executeUpdate(String, int[])}</li>
- * <li>{@link #executeQuery(String, String[])}</li>
  * <li>{@link #execute(String, int)}</li>
  * <li>{@link #execute(String, int[])}</li>
  * <li>{@link #execute(String, String[])}</li>
  * <li>{@link #execute(String)}</li>
  * </ul>
- * this class strictly adheres to the API specification which states that these <i>methods cannot be called on a
- * {@code PreparedStatement}s</i>. Calling methods reserved for {@code Statement} implementations will result in
+ * <p>
+ * This class strictly adheres to the API specification which states that these <i>methods cannot be called on a
+ * {@code PreparedStatement}s</i>. They are reserved for {@code Statement} implementations only and will result in
  * {@link SQLException}s.
  * 
  * @author Zhenya Leonov
  */
 public final class FluentStatement extends ForwardingPreparedStatement {
 
-    final private PreparedStatement statement;
-    final private String sql;
-    private Runnable callback = null;
-    private int batchSz = 0;
+    private final PreparedStatement statement;
+    private final String            sql;
+    private Runnable                callback  = null;
+    private int                     batchSize = 0;
 
     FluentStatement(final PreparedStatement statement, final String sql) {
         this.statement = statement;
-        this.sql = sql;
+        this.sql       = sql;
     }
 
     @Override
@@ -80,7 +81,7 @@ public final class FluentStatement extends ForwardingPreparedStatement {
     @Override
     public void addBatch() throws SQLException {
         delegate().addBatch();
-        batchSz++;
+        batchSize++;
         if (callback != null)
             callback.run();
     }
@@ -103,13 +104,13 @@ public final class FluentStatement extends ForwardingPreparedStatement {
      * @return this {@code FluentStatement} instance
      */
     public int getBatchSize() {
-        return batchSz;
+        return batchSize;
     }
 
     @Override
     public void clearBatch() throws SQLException {
         delegate().clearBatch();
-        batchSz = 0;
+        batchSize = 0;
     }
 
     /**
@@ -160,7 +161,7 @@ public final class FluentStatement extends ForwardingPreparedStatement {
     @Override
     public int[] executeBatch() throws SQLException {
         final int[] ints = delegate().executeBatch();
-        batchSz = 0;
+        batchSize = 0;
         return ints;
     }
 
@@ -220,8 +221,7 @@ public final class FluentStatement extends ForwardingPreparedStatement {
     }
 
     /**
-     * Registers a callback function which will be invoked every time {@link #addBatch()} or {@link #addBatch(String)} is
-     * called.
+     * Registers a callback function which will be invoked every time {@link #addBatch()} called.
      * 
      * @param callback the callback function
      * @return this {@code FluentStatement} instance
@@ -234,12 +234,12 @@ public final class FluentStatement extends ForwardingPreparedStatement {
     }
 
     /**
-     * Returns the sql that was used to create this {@code FluentStatement}.
+     * Returns the sql command that was used to create this {@code FluentStatement}.
      * 
-     * @return the sql that was used to create this {@code FluentStatement}
+     * @return the sql command that was used to create this {@code FluentStatement}
      * @return this {@code FluentStatement} instance
      */
-    public String sql() {
+    public String getSQL() {
         return sql;
     }
 
